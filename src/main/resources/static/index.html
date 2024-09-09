@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item CRUD</title>
+    <style>
+        .item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .item button {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>Market</h1>
+
+<div>
+    <h2>Create or Update Item</h2>
+    <form id="item-form">
+        <input type="hidden" id="item-id">
+        <label>Username: <input type="text" id="username" required></label><br>
+        <label>Title: <input type="text" id="title" required></label><br>
+        <label>Content: <input type="text" id="content" required></label><br>
+        <label>Price: <input type="number" id="price" required></label><br>
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+<h2>Item List</h2>
+<div id="item-list"></div>
+
+<script>
+    const apiEndpoint = '/post';
+
+    // Fetch and display items
+    async function fetchItems() {
+        const response = await fetch(apiEndpoint);
+        const items = await response.json();
+        const itemListDiv = document.getElementById('item-list');
+        itemListDiv.innerHTML = '';
+        items.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'item';
+            itemDiv.innerHTML = `
+                    <h3>${item.title}</h3>
+                    <p>Price: ${item.price}</p>
+                    <p>Username: ${item.username}</p>
+                    <button onclick="editItem(${item.id})">Edit</button>
+                    <button onclick="deleteItem(${item.id})">Delete</button>
+                `;
+            itemListDiv.appendChild(itemDiv);
+        });
+    }
+
+    // Create or update item
+    document.getElementById('item-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('item-id').value;
+        const item = {
+            username: document.getElementById('username').value,
+            title: document.getElementById('title').value,
+            content: document.getElementById('content').value,
+            price: document.getElementById('price').value
+        };
+
+        if (id) {
+            // Update item
+            await fetch(`${apiEndpoint}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+        } else {
+            // Create new item
+            await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+        }
+
+        document.getElementById('item-form').reset();
+        document.getElementById('item-id').value = '';
+        fetchItems();
+    });
+
+    // Delete item
+    async function deleteItem(id) {
+        await fetch(`${apiEndpoint}/${id}`, { method: 'DELETE' });
+        fetchItems();
+    }
+
+    // Edit item
+    function editItem(id) {
+        fetch(`${apiEndpoint}/${id}`)
+            .then(response => response.json())
+            .then(item => {
+                document.getElementById('item-id').value = item.id;
+                document.getElementById('username').value = item.username;
+                document.getElementById('title').value = item.title;
+                document.getElementById('content').value = item.content;
+                document.getElementById('price').value = item.price;
+            });
+    }
+
+    // Initialize item list
+    fetchItems();
+</script>
+</body>
+</html>
